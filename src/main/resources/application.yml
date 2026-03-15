@@ -1,15 +1,6 @@
 server:
   port: 8080
 
-langchain4j:
-  open-ai:
-    chat-model:
-      base-url: https://ark.cn-beijing.volces.com/api/v3/
-      api-key: ce250581-d58a-4580-999e-c003385ae61d
-      model-name: deepseek-v3-2-251201
-      temperature: 0.7
-
-spring:
-  redis:
-    host: localhost
-    port: 6379
+  spring:
+    application:
+      name: java-ai-demo
