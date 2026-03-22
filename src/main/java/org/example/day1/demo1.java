@@ -12,7 +12,7 @@ public class demo1 {
                 .modelName("deepseek-v3-2-251201")
                 .build();
 
-        String answer = model.chat("你好，你叫什么？");
+        String answer = model.chat("我叫什么");
         System.out.println(answer);
     }
 }

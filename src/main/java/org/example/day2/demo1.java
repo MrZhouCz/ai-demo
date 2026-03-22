@@ -19,7 +19,8 @@ public class demo1 {
 
         ChatResponse chatResponse = model.chat(
                 UserMessage.from("你好，你叫什么？"),
-                UserMessage.from("我叫Jonathan，记住我的名字")
+                UserMessage.from("我叫Jonathan，记住我的名字"),
+                UserMessage.from("我叫什么？")
         );
 
         System.out.println(chatResponse.aiMessage().text());
