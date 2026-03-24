@@ -1,12 +1,14 @@
-package org.example.day4;
+package org.example.chatMemory;
 
 import dev.langchain4j.data.message.ChatMessage;
-import dev.langchain4j.memory.ChatMemory;
+import dev.langchain4j.memory.chat.ChatMemoryProvider;
 import dev.langchain4j.memory.chat.MessageWindowChatMemory;
+import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.model.openai.OpenAiChatModel;
 import dev.langchain4j.service.AiServices;
+import dev.langchain4j.service.MemoryId;
+import dev.langchain4j.service.UserMessage;
 import dev.langchain4j.store.memory.chat.ChatMemoryStore;
-import org.example.day3.demo2;
 import org.mapdb.DB;
 import org.mapdb.DBMaker;
 
@@ -15,36 +17,39 @@ import java.util.Map;
 
 import static dev.langchain4j.data.message.ChatMessageDeserializer.messagesFromJson;
 import static dev.langchain4j.data.message.ChatMessageSerializer.messagesToJson;
+import static org.mapdb.Serializer.INTEGER;
 import static org.mapdb.Serializer.STRING;
 
-public class ServiceWithPersistentMemoryExample {
+public class ServiceWithPersistentForEachUserExample {
 
     interface Assistant {
-        String chat(String message);
+        String chat(@MemoryId int id, @UserMessage String message);
     }
 
     public static void main(String[] args) {
 
-        ChatMemory chatMemory = MessageWindowChatMemory.builder()
-                .maxMessages(10)
-                .chatMemoryStore(new PersistentChatMemoryStore())
-                .build();
-
-        OpenAiChatModel model = OpenAiChatModel.builder()
+        ChatModel model = OpenAiChatModel.builder()
                 .baseUrl("https://ark.cn-beijing.volces.com/api/v3")
                 .apiKey("ce250581-d58a-4580-999e-c003385ae61d")
                 .modelName("deepseek-v3-2-251201")
                 .build();
 
-        Assistant assistant = AiServices.builder(Assistant.class)
-                .chatModel(model)
-                .chatMemory(chatMemory)
+        ChatMemoryProvider chatMemoryProvider = messageId -> MessageWindowChatMemory.builder()
+                .id(messageId)
+                .maxMessages(10)
+                .chatMemoryStore(new PersistentChatMemoryStore())
                 .build();
 
-        System.out.println(assistant.chat("Hello, my name is Jonathan."));
+        Assistant assistant = AiServices.builder(Assistant.class)
+                .chatModel(model)
+                .chatMemoryProvider(chatMemoryProvider)
+                .build();
 
-        // 注释上一行，并取消注释下一行，查看对话结果
-//        System.out.println(assistant.chat("What is my name?"));
+//        System.out.println(assistant.chat(1, "Hello, my name is Jonathan."));
+//        System.out.println(assistant.chat(2, "Hello, my name is Tom."));
+
+//        System.out.println(assistant.chat(1, "What is my name?"));
+        System.out.println(assistant.chat(2, "What is my name?"));
     }
 
     /**
@@ -52,25 +57,24 @@ public class ServiceWithPersistentMemoryExample {
      */
     static class PersistentChatMemoryStore implements ChatMemoryStore {
 
-        private final DB db = DBMaker.fileDB("chat-memory.db").closeOnJvmShutdown().make();
-        private final Map<String, String> map = db.hashMap("message", STRING, STRING).createOrOpen();
+        private final DB db = DBMaker.fileDB("multi-user-chat-memory.db").closeOnJvmShutdown().make();
+        private final Map<Integer, String> map = db.hashMap("message", INTEGER, STRING).createOrOpen();
 
         @Override
         public List<ChatMessage> getMessages(Object memoryId) {
-            String json = map.get((String) memoryId);
-            System.out.println(json);
+            String json = map.get((int) memoryId);
             return messagesFromJson(json);
         }
 
         @Override
         public void updateMessages(Object memoryId, List<ChatMessage> messages) {
-            map.put((String) memoryId, messagesToJson(messages));
+            map.put((int) memoryId, messagesToJson(messages));
             db.commit();
         }
 
         @Override
         public void deleteMessages(Object memoryId) {
-            map.remove((String) memoryId);
+            map.remove((int) memoryId);
             db.commit();
         }
     }

@@ -1,12 +1,11 @@
-package org.example.day3;
+package org.example.chatMemory;
 
-import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.memory.ChatMemory;
 import dev.langchain4j.memory.chat.MessageWindowChatMemory;
 import dev.langchain4j.model.openai.OpenAiChatModel;
 import dev.langchain4j.service.AiServices;
 
-public class demo1 {
+public class ServiceWithMemoryExample {
 
     interface Assistant {
 
